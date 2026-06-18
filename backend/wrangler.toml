@@ -1,0 +1,17 @@
+name = "absensi-rbia-backend"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# Cron trigger — check for reminders every 5 minutes
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Timezone: WIB=7, WITA=8, WIT=9
+[vars]
+TIMEZONE_OFFSET = "7"
+FRONTEND_URL = "https://8941721c.absensi-rbia.pages.dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "absensi-rbia"
+database_id = "149a9b52-8a3c-4dca-86dc-7ac0c7274c53"
