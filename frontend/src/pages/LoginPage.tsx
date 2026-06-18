@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { GraduationCap, Mail, Lock, Loader2, Sun, Moon } from "lucide-react";
+import Turnstile from "@/components/Turnstile";
+
+const TURNSTILE_SITE_KEY = "0x4AAAAAADnGYXCUZ9EcUGQT";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -12,16 +15,32 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+
+  const handleTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleTurnstileError = useCallback(() => {
+    setTurnstileToken("");
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!turnstileToken) {
+      setError("Mohon selesaikan verifikasi terlebih dahulu");
+      return;
+    }
+
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, turnstileToken);
       navigate("/");
     } catch (err: any) {
       setError(err.response?.data?.message || "Login gagal");
+      setTurnstileToken("");
     } finally {
       setLoading(false);
     }
@@ -96,9 +115,16 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* Turnstile CAPTCHA */}
+            <Turnstile
+              siteKey={TURNSTILE_SITE_KEY}
+              onVerify={handleTurnstileVerify}
+              onError={handleTurnstileError}
+            />
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !turnstileToken}
               className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (

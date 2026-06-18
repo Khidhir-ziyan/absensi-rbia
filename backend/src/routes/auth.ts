@@ -6,12 +6,14 @@ import { signToken } from "../lib/auth";
 import { users, passwordResets } from "../schema";
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/auth.schema";
 import { sendEmail, resetPasswordEmail } from "../lib/email";
+import { verifyTurnstile } from "../lib/turnstile";
 
 type Bindings = {
   DB: D1Database;
   JWT_SECRET: string;
   RESEND_API_KEY: string;
   FRONTEND_URL: string;
+  TURNSTILE_SECRET_KEY: string;
 };
 
 export const authRoutes = new Hono<{ Bindings: Bindings }>();
@@ -20,6 +22,20 @@ authRoutes.post("/register", async (c) => {
   const body = await c.req.json();
   const data = registerSchema.parse(body);
   const db = getDB(c.env.DB);
+
+  // Verify Turnstile
+  const turnstileValid = await verifyTurnstile(
+    c.env.TURNSTILE_SECRET_KEY,
+    data.turnstileToken,
+    c.req.header("CF-Connecting-IP")
+  );
+
+  if (!turnstileValid) {
+    return c.json(
+      { success: false, message: "Verifikasi captcha gagal" },
+      400
+    );
+  }
 
   const existing = await db
     .select()
@@ -56,6 +72,20 @@ authRoutes.post("/login", async (c) => {
   const body = await c.req.json();
   const data = loginSchema.parse(body);
   const db = getDB(c.env.DB);
+
+  // Verify Turnstile
+  const turnstileValid = await verifyTurnstile(
+    c.env.TURNSTILE_SECRET_KEY,
+    data.turnstileToken,
+    c.req.header("CF-Connecting-IP")
+  );
+
+  if (!turnstileValid) {
+    return c.json(
+      { success: false, message: "Verifikasi captcha gagal" },
+      400
+    );
+  }
 
   const user = await db
     .select()

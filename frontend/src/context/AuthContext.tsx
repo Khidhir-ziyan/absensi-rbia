@@ -10,8 +10,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, turnstileToken: string) => Promise<void>;
+  register: (name: string, email: string, password: string, turnstileToken: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -33,8 +33,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const res = await api.post("/auth/login", { email, password });
+  const login = async (email: string, password: string, turnstileToken: string) => {
+    const res = await api.post("/auth/login", {
+      email,
+      password,
+      turnstileToken,
+    });
     const { token, user } = res.data.data;
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
@@ -42,14 +46,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(user);
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    const res = await api.post("/auth/register", { name, email, password });
-    const { token } = res.data.data;
+  const register = async (name: string, email: string, password: string, turnstileToken: string) => {
+    const res = await api.post("/auth/register", {
+      name,
+      email,
+      password,
+      turnstileToken,
+    });
+    const { token, user } = res.data.data;
     localStorage.setItem("token", token);
     setToken(token);
-    // After register, fetch user info or use the response
-    // For now, set basic user info
-    const user = { id: "", name, email };
     localStorage.setItem("user", JSON.stringify(user));
     setUser(user);
   };

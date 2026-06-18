@@ -6,6 +6,7 @@ node_modules/
 .env.local
 .env.production
 .dev.vars
+.deploy.sh
 
 # Build
 dist/
@@ -18,6 +19,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+.claude
 
 # Logs
 *.log
