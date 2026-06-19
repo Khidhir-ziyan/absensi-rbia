@@ -210,10 +210,15 @@ summaryRoutes.get("/export-pdf", async (c) => {
     classes: classSummaries,
   });
 
-  return new Response(pdfBuffer, {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": "attachment; filename=laporan-absensi.pdf",
-    },
+  // Debug: log PDF buffer info
+  console.log("PDF buffer type:", pdfBuffer.constructor.name);
+  console.log("PDF buffer length:", pdfBuffer.byteLength);
+  console.log("PDF first bytes:", Array.from(pdfBuffer.slice(0, 5)));
+
+  // Use Hono's c.body() for proper binary response handling
+  return c.body(pdfBuffer, 200, {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": 'attachment; filename="laporan-absensi.pdf"',
+    "Content-Length": pdfBuffer.byteLength.toString(),
   });
 });

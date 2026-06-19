@@ -53,18 +53,28 @@ export default function RekapPage() {
     setExporting(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/v1/summary/export-pdf", {
+      const apiBase = import.meta.env.VITE_API_URL || "/api/v1";
+      const res = await fetch(`${apiBase}/summary/export-pdf`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Gagal export PDF");
+        // Try to parse error as JSON, fallback to status text
+        let errorMsg = "Gagal export PDF";
+        try {
+          const error = await res.json();
+          errorMsg = error.message || errorMsg;
+        } catch {
+          errorMsg = res.statusText || errorMsg;
+        }
+        throw new Error(errorMsg);
       }
 
-      const blob = await res.blob();
+      // Ensure we get the raw binary data
+      const arrayBuffer = await res.arrayBuffer();
+      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

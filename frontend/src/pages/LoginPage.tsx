@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { GraduationCap, Mail, Lock, Loader2, Sun, Moon } from "lucide-react";
+import { GraduationCap, Mail, Lock, Loader2, Sun, Moon, Eye, EyeOff } from "lucide-react";
 import Turnstile from "@/components/Turnstile";
 
 const TURNSTILE_SITE_KEY = "0x4AAAAAADnGYXCUZ9EcUGQT";
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
 
   const handleTurnstileVerify = useCallback((token: string) => {
@@ -22,6 +23,10 @@ export default function LoginPage() {
   }, []);
 
   const handleTurnstileError = useCallback(() => {
+    setTurnstileToken("");
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
     setTurnstileToken("");
   }, []);
 
@@ -105,14 +110,23 @@ export default function LoginPage() {
                   Lupa password?
                 </Link>
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 border border-border dark:border-border-dark rounded-lg bg-canvas dark:bg-canvas-dark focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
-                placeholder="••••••••"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 pr-10 border border-border dark:border-border-dark rounded-lg bg-canvas dark:bg-canvas-dark focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted dark:text-ink-muted-dark hover:text-ink dark:hover:text-ink-dark transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             {/* Turnstile CAPTCHA */}
@@ -120,6 +134,7 @@ export default function LoginPage() {
               siteKey={TURNSTILE_SITE_KEY}
               onVerify={handleTurnstileVerify}
               onError={handleTurnstileError}
+              onExpire={handleTurnstileExpire}
             />
 
             <button
