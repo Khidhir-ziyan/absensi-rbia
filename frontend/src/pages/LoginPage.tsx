@@ -25,6 +25,10 @@ export default function LoginPage() {
     setTurnstileToken("");
   }, []);
 
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken("");
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -120,6 +124,7 @@ export default function LoginPage() {
               siteKey={TURNSTILE_SITE_KEY}
               onVerify={handleTurnstileVerify}
               onError={handleTurnstileError}
+              onExpire={handleTurnstileExpire}
             />
 
             <button

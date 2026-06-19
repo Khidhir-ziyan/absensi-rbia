@@ -28,6 +28,10 @@ export default function RegisterPage() {
     setTurnstileToken("");
   }, []);
 
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken("");
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -165,6 +169,7 @@ export default function RegisterPage() {
               siteKey={TURNSTILE_SITE_KEY}
               onVerify={handleTurnstileVerify}
               onError={handleTurnstileError}
+              onExpire={handleTurnstileExpire}
             />
 
             <button
