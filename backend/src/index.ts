@@ -25,7 +25,14 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Global middleware
-app.use("*", cors({ origin: "*" }));
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.onError(errorHandler);
 
 // Public routes
