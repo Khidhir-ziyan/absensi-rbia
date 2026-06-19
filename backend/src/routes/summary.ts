@@ -210,17 +210,15 @@ summaryRoutes.get("/export-pdf", async (c) => {
     classes: classSummaries,
   });
 
-  // Ensure proper ArrayBuffer for Cloudflare Workers Response
-  const arrayBuffer = pdfBuffer.buffer.slice(
-    pdfBuffer.byteOffset,
-    pdfBuffer.byteOffset + pdfBuffer.byteLength
-  );
+  // Debug: log PDF buffer info
+  console.log("PDF buffer type:", pdfBuffer.constructor.name);
+  console.log("PDF buffer length:", pdfBuffer.byteLength);
+  console.log("PDF first bytes:", Array.from(pdfBuffer.slice(0, 5)));
 
-  return new Response(arrayBuffer, {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": 'attachment; filename="laporan-absensi.pdf"',
-      "Content-Length": arrayBuffer.byteLength.toString(),
-    },
+  // Use Hono's c.body() for proper binary response handling
+  return c.body(pdfBuffer, 200, {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": 'attachment; filename="laporan-absensi.pdf"',
+    "Content-Length": pdfBuffer.byteLength.toString(),
   });
 });
