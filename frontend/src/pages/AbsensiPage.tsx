@@ -13,6 +13,7 @@ import {
   AlertCircle,
   User,
   Loader2,
+  CheckCheck,
 } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -76,6 +77,16 @@ export default function AbsensiPage() {
 
   const setStatus = (studentId: string, status: AttendanceStatus) => {
     setAttendance((prev) => ({ ...prev, [studentId]: status }));
+    setSaved(false);
+  };
+
+  const handleHadirSemua = () => {
+    if (!session) return;
+    const allPresent: Record<string, AttendanceStatus> = {};
+    for (const student of session.students) {
+      allPresent[student.id] = ATTENDANCE_STATUS.PRESENT;
+    }
+    setAttendance(allPresent);
     setSaved(false);
   };
 
@@ -171,6 +182,13 @@ export default function AbsensiPage() {
           </span>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={handleHadirSemua}
+            className="flex items-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+          >
+            <CheckCheck className="w-4 h-4" />
+            Hadir Semua
+          </button>
           <button
             onClick={handleSave}
             disabled={saving}
