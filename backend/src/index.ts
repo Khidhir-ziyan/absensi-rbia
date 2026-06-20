@@ -10,6 +10,7 @@ import { sessionRoutes } from "./routes/sessions";
 import { summaryRoutes } from "./routes/summary";
 import { profileRoutes } from "./routes/profile";
 import { scheduleRoutes } from "./routes/schedules";
+import { testRoutes } from "./routes/tests";
 import { getDB } from "./lib/db";
 import { sendEmail, scheduleReminderEmail, DAY_LABELS } from "./lib/email";
 import { subjects, classes, users } from "./schema";
@@ -49,6 +50,7 @@ api.route("/sessions", sessionRoutes);
 api.route("/summary", summaryRoutes);
 api.route("/profile", profileRoutes);
 api.route("/schedules", scheduleRoutes);
+api.route("/", testRoutes);
 
 app.route("/api/v1", api);
 

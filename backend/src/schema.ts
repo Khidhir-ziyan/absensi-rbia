@@ -113,6 +113,41 @@ export const attendanceRecords = sqliteTable(
   ]
 );
 
+export const tests = sqliteTable("tests", {
+  id: text("id").primaryKey(),
+  subjectId: text("subject_id")
+    .notNull()
+    .references(() => subjects.id),
+  name: text("name").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+export const testGrades = sqliteTable(
+  "test_grades",
+  {
+    id: text("id").primaryKey(),
+    testId: text("test_id")
+      .notNull()
+      .references(() => tests.id),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => students.id),
+    score: integer("score").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [unique("test_grade_student").on(table.testId, table.studentId)]
+);
+
 export const passwordResets = sqliteTable("password_resets", {
   id: text("id").primaryKey(),
   userId: text("user_id")

@@ -15,6 +15,10 @@ import {
   BellOff,
   Save,
   X,
+  FileText,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import EmptyState from "@/components/EmptyState";
@@ -37,6 +41,30 @@ interface Session {
   status: string;
 }
 
+interface TestItem {
+  id: string;
+  name: string;
+  createdAt: string;
+  gradeCount: number;
+  totalStudents: number;
+}
+
+interface TestStudent {
+  id: string;
+  name: string;
+  studentId: string | null;
+  score: number | null;
+  gradeId: string | null;
+}
+
+interface TestDetail {
+  id: string;
+  name: string;
+  subjectId: string;
+  createdAt: string;
+  students: TestStudent[];
+}
+
 interface SubjectData {
   id: string;
   name: string;
@@ -57,6 +85,18 @@ export default function MapelDetailPage() {
   const [showStartForm, setShowStartForm] = useState(false);
   const [topic, setTopic] = useState("");
   const [starting, setStarting] = useState(false);
+
+  // Test scores
+  const [testsList, setTestsList] = useState<TestItem[]>([]);
+  const [showTestForm, setShowTestForm] = useState(false);
+  const [newTestName, setNewTestName] = useState("");
+  const [creatingTest, setCreatingTest] = useState(false);
+  const [expandedTest, setExpandedTest] = useState<string | null>(null);
+  const [testDetail, setTestDetail] = useState<TestDetail | null>(null);
+  const [loadingTest, setLoadingTest] = useState(false);
+  const [grades, setGrades] = useState<Record<string, number>>({});
+  const [savingGrades, setSavingGrades] = useState(false);
+  const [deletingTest, setDeletingTest] = useState<string | null>(null);
 
   // Schedule edit form
   const [showScheduleForm, setShowScheduleForm] = useState(false);
@@ -119,6 +159,96 @@ export default function MapelDetailPage() {
       alert(err.response?.data?.message || "Gagal menyimpan jadwal");
     } finally {
       setSavingSchedule(false);
+    }
+  };
+
+  // Test functions
+  const loadTests = async () => {
+    if (!id) return;
+    try {
+      const res = await api.get(`/subjects/${id}/tests`);
+      setTestsList(res.data.data);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (id) loadTests();
+  }, [id]);
+
+  const handleCreateTest = async () => {
+    if (!newTestName.trim() || !id) return;
+    setCreatingTest(true);
+    try {
+      await api.post(`/subjects/${id}/tests`, { name: newTestName.trim() });
+      setNewTestName("");
+      setShowTestForm(false);
+      loadTests();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Gagal membuat tes");
+    } finally {
+      setCreatingTest(false);
+    }
+  };
+
+  const loadTestDetail = async (testId: string) => {
+    if (expandedTest === testId) {
+      setExpandedTest(null);
+      setTestDetail(null);
+      return;
+    }
+    setExpandedTest(testId);
+    setLoadingTest(true);
+    try {
+      const res = await api.get(`/tests/${testId}`);
+      const data = res.data.data;
+      setTestDetail(data);
+      const initialGrades: Record<string, number> = {};
+      for (const s of data.students) {
+        if (s.score !== null) {
+          initialGrades[s.id] = s.score;
+        }
+      }
+      setGrades(initialGrades);
+    } catch {
+      // ignore
+    }
+    setLoadingTest(false);
+  };
+
+  const handleSaveGrades = async () => {
+    if (!expandedTest) return;
+    setSavingGrades(true);
+    try {
+      const gradesArray = Object.entries(grades).map(([studentId, score]) => ({
+        studentId,
+        score,
+      }));
+      await api.put(`/tests/${expandedTest}/grades`, { grades: gradesArray });
+      loadTests();
+      alert("Nilai berhasil disimpan");
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Gagal menyimpan nilai");
+    } finally {
+      setSavingGrades(false);
+    }
+  };
+
+  const handleDeleteTest = async (testId: string) => {
+    if (!confirm("Hapus tes ini beserta semua nilai?")) return;
+    setDeletingTest(testId);
+    try {
+      await api.delete(`/tests/${testId}`);
+      if (expandedTest === testId) {
+        setExpandedTest(null);
+        setTestDetail(null);
+      }
+      loadTests();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Gagal menghapus tes");
+    } finally {
+      setDeletingTest(null);
     }
   };
 
@@ -421,6 +551,234 @@ export default function MapelDetailPage() {
           })}
         </div>
       )}
+
+      {/* ── Tes Formatif ── */}
+      <div className="mt-10">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold">Tes Formatif</h2>
+            <span className="px-2 py-0.5 bg-surface-2 dark:bg-surface-dark-2 rounded-full text-xs text-ink-muted dark:text-ink-muted-dark">
+              {testsList.length}
+            </span>
+          </div>
+          <button
+            onClick={() => setShowTestForm(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Tambah Tes
+          </button>
+        </div>
+
+        {/* Create Test Form */}
+        {showTestForm && (
+          <div className="mb-6 bg-surface-1 dark:bg-surface-dark-1 rounded-xl shadow-card p-5">
+            <h3 className="font-semibold mb-4">Tes Baru</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  Nama Tes
+                </label>
+                <input
+                  type="text"
+                  value={newTestName}
+                  onChange={(e) => setNewTestName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-border dark:border-border-dark rounded-lg bg-canvas dark:bg-canvas-dark focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Contoh: Tes Formatif 1"
+                  required
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCreateTest}
+                  disabled={creatingTest || !newTestName.trim()}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  {creatingTest ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Membuat...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      Buat Tes
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowTestForm(false);
+                    setNewTestName("");
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 border border-border dark:border-border-dark rounded-lg text-sm hover:bg-surface-2 dark:hover:bg-surface-dark-2 transition-colors"
+                >
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Test List */}
+        {testsList.length === 0 ? (
+          <EmptyState
+            icon={FileText}
+            title="Belum ada tes"
+            description="Tambah tes formatif untuk mencatat nilai siswa."
+            action={
+              <button
+                onClick={() => setShowTestForm(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Tambah Tes
+              </button>
+            }
+          />
+        ) : (
+          <div className="space-y-3">
+            {testsList.map((test) => (
+              <div
+                key={test.id}
+                className="bg-surface-1 dark:bg-surface-dark-1 rounded-xl shadow-card overflow-hidden"
+              >
+                {/* Test Header */}
+                <button
+                  onClick={() => loadTestDetail(test.id)}
+                  className="w-full flex items-center justify-between p-4 hover:bg-surface-2/50 dark:hover:bg-surface-dark-2/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-medium">{test.name}</h3>
+                      <p className="text-sm text-ink-muted dark:text-ink-muted-dark">
+                        {test.gradeCount}/{test.totalStudents} siswa dinilai ·{" "}
+                        {new Date(test.createdAt).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {deletingTest === test.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTest(test.id);
+                        }}
+                        className="p-2 text-ink-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    {expandedTest === test.id ? (
+                      <ChevronUp className="w-5 h-5 text-ink-muted" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-ink-muted" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Expanded: Grades Table */}
+                {expandedTest === test.id && (
+                  <div className="border-t border-border dark:border-border-dark p-4">
+                    {loadingTest ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                      </div>
+                    ) : testDetail ? (
+                      <div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b border-border dark:border-border-dark">
+                                <th className="text-left px-3 py-2 text-sm font-medium text-ink-muted dark:text-ink-muted-dark">
+                                  Siswa
+                                </th>
+                                <th className="text-center px-3 py-2 text-sm font-medium text-ink-muted dark:text-ink-muted-dark w-32">
+                                  Nilai (0-100)
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {testDetail.students.map((student) => (
+                                <tr
+                                  key={student.id}
+                                  className="border-b border-border dark:border-border-dark last:border-0"
+                                >
+                                  <td className="px-3 py-2.5 text-sm">
+                                    <p className="font-medium">
+                                      {student.name}
+                                    </p>
+                                    {student.studentId && (
+                                      <p className="text-xs text-ink-muted dark:text-ink-muted-dark">
+                                        NIS: {student.studentId}
+                                      </p>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2.5">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={100}
+                                      value={grades[student.id] ?? ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setGrades((prev) => {
+                                          const next = { ...prev };
+                                          if (val === "") {
+                                            delete next[student.id];
+                                          } else {
+                                            next[student.id] = Number(val);
+                                          }
+                                          return next;
+                                        });
+                                      }}
+                                      className="w-full px-3 py-1.5 text-center border border-border dark:border-border-dark rounded-lg bg-canvas dark:bg-canvas-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                      placeholder="-"
+                                    />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            onClick={handleSaveGrades}
+                            disabled={savingGrades}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium disabled:opacity-50"
+                          >
+                            {savingGrades ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Menyimpan...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="w-4 h-4" />
+                                Simpan Nilai
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

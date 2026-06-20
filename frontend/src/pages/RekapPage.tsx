@@ -23,11 +23,24 @@ interface StudentSummary {
   totalSessions: number;
 }
 
+interface TestStudentScore {
+  studentId: string;
+  studentName: string;
+  score: number | null;
+}
+
+interface TestSummary {
+  testId: string;
+  testName: string;
+  students: TestStudentScore[];
+}
+
 interface SubjectSummary {
   subjectId: string;
   subjectName: string;
   totalSessions: number;
   students: StudentSummary[];
+  tests?: TestSummary[];
 }
 
 interface ClassSummary {
@@ -242,6 +255,147 @@ export default function RekapPage() {
                               })}
                             </tbody>
                           </table>
+                        </div>
+                      )}
+
+                      {/* Test Scores Table */}
+                      {subject.tests && subject.tests.length > 0 && (
+                        <div className="border-t border-border dark:border-border-dark">
+                          <div className="px-5 py-3 bg-surface-2/50 dark:bg-surface-dark-2/50">
+                            <h4 className="text-sm font-semibold flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-primary" />
+                              Nilai Tes Formatif
+                            </h4>
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="border-b border-border dark:border-border-dark text-sm">
+                                  <th className="text-left px-5 py-3 font-medium">
+                                    Nama
+                                  </th>
+                                  {subject.tests.map((test) => (
+                                    <th
+                                      key={test.testId}
+                                      className="text-center px-3 py-3 font-medium"
+                                    >
+                                      {test.testName}
+                                    </th>
+                                  ))}
+                                  <th className="text-center px-3 py-3 font-bold">
+                                    Rata-rata
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {subject.students.map((student) => {
+                                  // Calculate student average
+                                  const studentScores = subject.tests!
+                                    .map((test) =>
+                                      test.students.find(
+                                        (s) => s.studentId === student.studentId
+                                      )?.score
+                                    )
+                                    .filter((s): s is number => s != null);
+                                  const studentAvg =
+                                    studentScores.length > 0
+                                      ? Math.round(
+                                          studentScores.reduce((a, b) => a + b, 0) /
+                                            studentScores.length
+                                        )
+                                      : null;
+
+                                  return (
+                                    <tr
+                                      key={student.studentId}
+                                      className="border-b border-border dark:border-border-dark last:border-0 hover:bg-surface-2/50 dark:hover:bg-surface-dark-2/50 transition-colors"
+                                    >
+                                      <td className="px-5 py-3 text-sm font-medium">
+                                        {student.studentName}
+                                      </td>
+                                      {subject.tests!.map((test) => {
+                                        const score = test.students.find(
+                                          (s) => s.studentId === student.studentId
+                                        )?.score;
+                                        return (
+                                          <td
+                                            key={test.testId}
+                                            className="text-center px-3 py-3 text-sm"
+                                          >
+                                            {score != null ? (
+                                              <span
+                                                className={`font-medium ${
+                                                  score >= 80
+                                                    ? "text-green-600 dark:text-green-400"
+                                                    : score >= 60
+                                                    ? "text-yellow-600 dark:text-yellow-400"
+                                                    : "text-red-600 dark:text-red-400"
+                                                }`}
+                                              >
+                                                {score}
+                                              </span>
+                                            ) : (
+                                              <span className="text-ink-muted dark:text-ink-muted-dark">
+                                                -
+                                              </span>
+                                            )}
+                                          </td>
+                                        );
+                                      })}
+                                      <td className="text-center px-3 py-3">
+                                        {studentAvg != null ? (
+                                          <span
+                                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold ${
+                                              studentAvg >= 80
+                                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                                : studentAvg >= 60
+                                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                            }`}
+                                          >
+                                            {studentAvg}
+                                          </span>
+                                        ) : (
+                                          <span className="text-ink-muted dark:text-ink-muted-dark text-sm">
+                                            -
+                                          </span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          {/* Averages */}
+                          <div className="px-5 py-3 border-t border-border dark:border-border-dark">
+                            <div className="flex flex-wrap gap-4">
+                              {subject.tests.map((test) => {
+                                const scores = test.students.filter(
+                                  (s) => s.score != null
+                                );
+                                const avg =
+                                  scores.length > 0
+                                    ? Math.round(
+                                        scores.reduce(
+                                          (sum, s) => sum + (s.score || 0),
+                                          0
+                                        ) / scores.length
+                                      )
+                                    : 0;
+                                return (
+                                  <p
+                                    key={test.testId}
+                                    className="text-xs text-ink-muted dark:text-ink-muted-dark"
+                                  >
+                                    {test.testName}: rata-rata{" "}
+                                    <span className="font-medium">{avg}</span> (
+                                    {scores.length} siswa)
+                                  </p>
+                                );
+                              })}
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>

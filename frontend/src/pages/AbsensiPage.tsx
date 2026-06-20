@@ -169,7 +169,7 @@ export default function AbsensiPage() {
       </div>
 
       {/* Progress & Actions */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
           <div className="flex-1 w-32 h-2 bg-surface-2 dark:bg-surface-dark-2 rounded-full overflow-hidden">
             <div
@@ -184,24 +184,24 @@ export default function AbsensiPage() {
         <div className="flex gap-2">
           <button
             onClick={handleHadirSemua}
-            className="flex items-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+            className="flex items-center gap-1.5 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-xs sm:text-sm font-medium"
           >
-            <CheckCheck className="w-4 h-4" />
+            <CheckCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Hadir Semua
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2.5 border border-border dark:border-border-dark rounded-lg text-sm hover:bg-surface-2 dark:hover:bg-surface-dark-2 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 border border-border dark:border-border-dark rounded-lg text-xs sm:text-sm hover:bg-surface-2 dark:hover:bg-surface-dark-2 transition-colors disabled:opacity-50"
           >
             {saved ? (
               <>
-                <CheckCircle className="w-4 h-4 text-green-500" />
+                <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
                 Tersimpan
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 {saving ? "Menyimpan..." : "Simpan"}
               </>
             )}
@@ -209,16 +209,16 @@ export default function AbsensiPage() {
           <button
             onClick={handleFinish}
             disabled={finishing}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 bg-primary text-on-primary rounded-lg hover:bg-primary-hover transition-colors text-xs sm:text-sm font-medium disabled:opacity-50"
           >
             {finishing ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                 Menyelesaikan...
               </>
             ) : (
               <>
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Selesai
               </>
             )}
@@ -237,17 +237,17 @@ export default function AbsensiPage() {
                 status ? "ring-1 ring-primary/20" : ""
               }`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                       status
                         ? statusColors[status].replace("text-white", "") + "/20"
                         : "bg-surface-2 dark:bg-surface-dark-2"
                     }`}
                   >
                     <User
-                      className={`w-5 h-5 ${
+                      className={`w-4 h-4 sm:w-5 sm:h-5 ${
                         status
                           ? status === ATTENDANCE_STATUS.PRESENT
                             ? "text-green-500"
@@ -261,7 +261,7 @@ export default function AbsensiPage() {
                     />
                   </div>
                   <div>
-                    <p className="font-medium">{student.name}</p>
+                    <p className="font-medium text-sm sm:text-base">{student.name}</p>
                     {student.studentId && (
                       <p className="text-xs text-ink-muted dark:text-ink-muted-dark">
                         NIS: {student.studentId}
@@ -279,7 +279,7 @@ export default function AbsensiPage() {
                     <button
                       key={statusKey}
                       onClick={() => setStatus(student.id, statusKey)}
-                      className={`px-3 py-2 text-xs rounded-lg font-medium transition-all ${
+                      className={`px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs rounded-lg font-medium transition-all ${
                         status === statusKey
                           ? statusColors[statusKey] + " shadow-sm"
                           : "bg-surface-2 dark:bg-surface-dark-2 hover:bg-border dark:hover:bg-border-dark"

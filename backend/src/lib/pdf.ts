@@ -10,11 +10,24 @@ interface StudentSummary {
   totalSessions: number;
 }
 
+interface TestStudentScore {
+  studentId: string;
+  studentName: string;
+  score: number | null;
+}
+
+interface TestSummary {
+  testId: string;
+  testName: string;
+  students: TestStudentScore[];
+}
+
 interface SubjectSummary {
   subjectId: string;
   subjectName: string;
   totalSessions: number;
   students: StudentSummary[];
+  tests?: TestSummary[];
 }
 
 interface ClassSummary {
@@ -352,6 +365,142 @@ export async function generateAttendancePDF(data: PDFData): Promise<Uint8Array> 
         { italic: true, color: COLORS.inkMuted }
       );
       y -= 24;
+
+      // ── Test Scores ──
+      if (subject.tests && subject.tests.length > 0) {
+        checkPageSpace(40);
+
+        // Header
+        drawText("Nilai Tes Formatif", MARGIN_LEFT + 8, y, 10, {
+          bold: true,
+          color: COLORS.primaryDark,
+        });
+        y -= 16;
+
+        // Calculate column widths: nama + one column per test + average
+        const testTableX = MARGIN_LEFT + 8;
+        const testTableWidth = CONTENT_WIDTH - 16;
+        const avgColWidth = 55;
+        const nameColWidth = testTableWidth * 0.3;
+        const testColWidth = subject.tests.length > 0
+          ? (testTableWidth - nameColWidth - avgColWidth) / subject.tests.length
+          : testTableWidth * 0.65;
+
+        // Table header
+        const testHeaderHeight = 22;
+        drawRect(testTableX, y, testTableWidth, testHeaderHeight, COLORS.surface);
+
+        // "Nama Siswa" header
+        drawText("Nama Siswa", testTableX + 8, y - 15, 8, { bold: true, color: COLORS.inkMuted });
+
+        // Test name headers
+        for (let ti = 0; ti < subject.tests.length; ti++) {
+          const test = subject.tests[ti];
+          const colX = testTableX + nameColWidth + ti * testColWidth;
+          const headerText = test.testName;
+          // Truncate if too long
+          let displayHeader = headerText;
+          while (font.widthOfTextAtSize(displayHeader, 7) > testColWidth - 8 && displayHeader.length > 0) {
+            displayHeader = displayHeader.slice(0, -1);
+          }
+          if (displayHeader.length < headerText.length) {
+            displayHeader = displayHeader.slice(0, -2) + "..";
+          }
+          const textX = colX + testColWidth / 2 - font.widthOfTextAtSize(displayHeader, 7) / 2;
+          drawText(displayHeader, textX, y - 15, 7, { bold: true, color: COLORS.inkMuted });
+        }
+
+        // "Rata-rata" header
+        const avgHeaderX = testTableX + nameColWidth + subject.tests.length * testColWidth + avgColWidth / 2 - font.widthOfTextAtSize("Rata-rata", 8) / 2;
+        drawText("Rata-rata", avgHeaderX, y - 15, 8, { bold: true, color: COLORS.inkMuted });
+
+        y -= testHeaderHeight;
+        drawLine(testTableX, y, testTableX + testTableWidth, 1.5, COLORS.primaryDark);
+        y -= 2;
+
+        // Student rows
+        for (let ri = 0; ri < subject.students.length; ri++) {
+          const student = subject.students[ri];
+          const rowHeight = 20;
+
+          checkPageSpace(rowHeight + 10);
+
+          if (ri % 2 === 1) {
+            drawRect(testTableX, y, testTableWidth, rowHeight, rgb(0.98, 0.98, 0.98));
+          }
+
+          // Student name
+          drawText(student.studentName, testTableX + 8, y - 13, 9, {
+            bold: true,
+            maxWidth: nameColWidth - 16,
+          });
+
+          // Scores for each test + calculate average
+          const studentScores: number[] = [];
+          for (let ti = 0; ti < subject.tests.length; ti++) {
+            const test = subject.tests[ti];
+            const studentScore = test.students.find((s) => s.studentId === student.studentId);
+            const scoreText = studentScore?.score != null ? studentScore.score.toString() : "-";
+            const scoreColor =
+              studentScore?.score != null
+                ? studentScore.score >= 80
+                  ? COLORS.green
+                  : studentScore.score >= 60
+                    ? COLORS.yellow
+                    : COLORS.red
+                : COLORS.inkMuted;
+
+            if (studentScore?.score != null) studentScores.push(studentScore.score);
+
+            const colX = testTableX + nameColWidth + ti * testColWidth;
+            const textX = colX + testColWidth / 2 - font.widthOfTextAtSize(scoreText, 9) / 2;
+            drawText(scoreText, textX, y - 13, 9, { color: scoreColor });
+          }
+
+          // Average
+          const avgText = studentScores.length > 0
+            ? Math.round(studentScores.reduce((a, b) => a + b, 0) / studentScores.length).toString()
+            : "-";
+          const avgColor = studentScores.length > 0
+            ? (() => {
+                const avg = Math.round(studentScores.reduce((a, b) => a + b, 0) / studentScores.length);
+                return avg >= 80 ? COLORS.green : avg >= 60 ? COLORS.yellow : COLORS.red;
+              })()
+            : COLORS.inkMuted;
+          const avgColX = testTableX + nameColWidth + subject.tests.length * testColWidth;
+          const avgTextX = avgColX + avgColWidth / 2 - font.widthOfTextAtSize(avgText, 9) / 2;
+          drawText(avgText, avgTextX, y - 13, 9, { bold: true, color: avgColor });
+
+          y -= rowHeight;
+          drawLine(testTableX + 8, y, testTableX + testTableWidth - 8, 0.5, COLORS.border);
+          y -= 2;
+        }
+
+        // Table bottom border
+        drawLine(testTableX, y + 2, testTableX + testTableWidth, 1, COLORS.border);
+        y -= 16;
+
+        // Average per test
+        for (let ti = 0; ti < subject.tests.length; ti++) {
+          const test = subject.tests[ti];
+          const scoresWithValues = test.students.filter((s) => s.score != null);
+          const avgScore =
+            scoresWithValues.length > 0
+              ? Math.round(scoresWithValues.reduce((sum, s) => sum + (s.score || 0), 0) / scoresWithValues.length)
+              : 0;
+
+          drawText(
+            `${test.testName}: rata-rata ${avgScore} (${scoresWithValues.length} siswa)`,
+            MARGIN_LEFT + 16,
+            y,
+            8,
+            { italic: true, color: COLORS.inkMuted }
+          );
+          y -= 14;
+        }
+
+        y -= 10;
+      }
     }
 
     // Page break between classes (except last)

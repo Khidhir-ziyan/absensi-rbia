@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { eq, and, isNull } from "drizzle-orm";
 import { getDB } from "../lib/db";
-import { classes, subjects, sessions, students, attendanceRecords, users } from "../schema";
+import { classes, subjects, sessions, students, attendanceRecords, users, tests, testGrades } from "../schema";
 import { ATTENDANCE_STATUS, SESSION_STATUS } from "../lib/constants";
 import { generateAttendancePDF } from "../lib/pdf";
 
@@ -92,11 +92,47 @@ summaryRoutes.get("/", async (c) => {
         });
       }
 
+      // Get test scores for this subject
+      const subjectTests = await db
+        .select()
+        .from(tests)
+        .where(eq(tests.subjectId, subject.id));
+
+      const testSummaries = [];
+      for (const test of subjectTests) {
+        const testStudents = [];
+        for (const student of classStudents) {
+          const grade = await db
+            .select()
+            .from(testGrades)
+            .where(
+              and(
+                eq(testGrades.testId, test.id),
+                eq(testGrades.studentId, student.id)
+              )
+            )
+            .get();
+
+          testStudents.push({
+            studentId: student.id,
+            studentName: student.name,
+            score: grade?.score ?? null,
+          });
+        }
+
+        testSummaries.push({
+          testId: test.id,
+          testName: test.name,
+          students: testStudents,
+        });
+      }
+
       subjectSummaries.push({
         subjectId: subject.id,
         subjectName: subject.name,
         totalSessions,
         students: studentSummaries,
+        tests: testSummaries,
       });
     }
 
@@ -190,11 +226,47 @@ summaryRoutes.get("/export-pdf", async (c) => {
         });
       }
 
+      // Get test scores for this subject
+      const subjectTests = await db
+        .select()
+        .from(tests)
+        .where(eq(tests.subjectId, subject.id));
+
+      const testSummaries = [];
+      for (const test of subjectTests) {
+        const testStudents = [];
+        for (const student of classStudents) {
+          const grade = await db
+            .select()
+            .from(testGrades)
+            .where(
+              and(
+                eq(testGrades.testId, test.id),
+                eq(testGrades.studentId, student.id)
+              )
+            )
+            .get();
+
+          testStudents.push({
+            studentId: student.id,
+            studentName: student.name,
+            score: grade?.score ?? null,
+          });
+        }
+
+        testSummaries.push({
+          testId: test.id,
+          testName: test.name,
+          students: testStudents,
+        });
+      }
+
       subjectSummaries.push({
         subjectId: subject.id,
         subjectName: subject.name,
         totalSessions,
         students: studentSummaries,
+        tests: testSummaries,
       });
     }
 
