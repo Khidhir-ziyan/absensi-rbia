@@ -1,11 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { GraduationCap, Mail, Lock, User, Loader2, Sun, Moon, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import Turnstile from "@/components/Turnstile";
-
-const TURNSTILE_SITE_KEY = "0x4AAAAAADnGYXCUZ9EcUGQT";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -20,28 +17,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState("");
-
-  const handleTurnstileVerify = useCallback((token: string) => {
-    setTurnstileToken(token);
-  }, []);
-
-  const handleTurnstileError = useCallback(() => {
-    setTurnstileToken("");
-  }, []);
-
-  const handleTurnstileExpire = useCallback(() => {
-    setTurnstileToken("");
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    if (!turnstileToken) {
-      setError("Mohon selesaikan verifikasi terlebih dahulu");
-      return;
-    }
 
     if (password !== confirmPassword) {
       setError("Password tidak cocok");
@@ -55,11 +34,10 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register(name, email, password, turnstileToken);
+      await register(name, email, password);
       navigate("/");
     } catch (err: any) {
       setError(err.response?.data?.message || "Pendaftaran gagal");
-      setTurnstileToken("");
     } finally {
       setLoading(false);
     }
@@ -184,17 +162,9 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Turnstile CAPTCHA */}
-            <Turnstile
-              siteKey={TURNSTILE_SITE_KEY}
-              onVerify={handleTurnstileVerify}
-              onError={handleTurnstileError}
-              onExpire={handleTurnstileExpire}
-            />
-
             <button
               type="submit"
-              disabled={loading || !turnstileToken}
+              disabled={loading}
               className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
