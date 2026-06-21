@@ -10,6 +10,7 @@ crons = ["*/5 * * * *"]
 [vars]
 TIMEZONE_OFFSET = "7"
 FRONTEND_URL = "https://8941721c.absensi-rbia.pages.dev"
+JWT_SECRET = "1e828f913b282dc349acf22ba413ce986877e07b59a21c5ab5c4e2b9c4b2d064"
 
 [[d1_databases]]
 binding = "DB"
